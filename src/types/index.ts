@@ -43,7 +43,7 @@ export interface PartnershipInquiry {
   company_category: string;
   website?: string;
   message?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   notes?: string;
 }
 
@@ -62,7 +62,7 @@ export interface ClientGallery {
   cover_image?: string;
   images: string[];
   expiration_date: string;
-  status?: 'active' | 'expired' | 'archived' | 'draft';
+  status?: "active" | "expired" | "archived" | "draft";
   last_accessed_at?: string;
   view_count?: number;
   allow_downloads?: boolean;
@@ -76,6 +76,7 @@ export interface ClientImage {
   image_url: string;
   thumbnail_url: string | null;
   title: string | null;
+  public_id?: string | null;
   order_index: number;
   created_at: string;
 }
@@ -95,7 +96,7 @@ export interface ClientGalleryDownload {
   gallery_id: string;
   image_public_id?: string;
   downloaded_at: string;
-  download_type?: 'single' | 'zip_all' | 'zip_favorites';
+  download_type?: "single" | "zip_all" | "zip_favorites";
   client_email?: string;
   image_count?: number;
 }
