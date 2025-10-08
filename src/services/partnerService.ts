@@ -1,5 +1,5 @@
 // src/services/partnerService.ts
-import { adminRequest } from "../lib/adminApi";
+import { adminRequest, getBackendUrl } from "../lib/adminApi";
 import { Partner, PartnershipInquiry } from "../types";
 
 export async function getAllPartners(): Promise<Partner[]> {
@@ -32,9 +32,7 @@ export async function deletePartner(id: string): Promise<void> {
 export async function submitPartnershipInquiry(
   inquiry: Omit<PartnershipInquiry, "id" | "created_at" | "status" | "notes">,
 ): Promise<PartnershipInquiry> {
-  const backendUrl =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
-  const response = await fetch(`${backendUrl}/api/partners/inquiries`, {
+  const response = await fetch(`${getBackendUrl()}/api/partners/inquiries`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(inquiry),

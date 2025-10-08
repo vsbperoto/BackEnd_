@@ -1,22 +1,17 @@
-require('dotenv').config();
-
-const analyticsRouter = require('./routes/analytics.ts').default;
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { createClient } = require('@supabase/supabase-js');
-const emailRoutes = require('./routes/email.cjs');
+const { createApp } = require("./app.cjs");
 
 const PORT = process.env.PORT || 4000;
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error('❌ Missing VITE_SUPABASE_URL or VITE_SUPABASE_SERVICE_ROLE_KEY in environment');
+let app;
+
+try {
+  ({ app } = createApp());
+} catch (error) {
+  console.error("❌ Failed to initialize Express application", error);
   process.exit(1);
 }
 
+<<<<<<< HEAD
 if (!ADMIN_TOKEN) {
   console.warn('⚠️  Warning: ADMIN_TOKEN not set. Using default token.');
 }
@@ -974,8 +969,19 @@ app.get('/health', (req, res) => {
   });
 });
 
+=======
+>>>>>>> origin/codex/expand-admin-panel-into-full-cms-2025-10-08-hdjl7l
 app.listen(PORT, () => {
   console.log(`✅ Backend server listening on http://localhost:${PORT}`);
-  console.log(`📧 Email service: ${process.env.RESEND_API_KEY ? 'Enabled' : 'Disabled (set RESEND_API_KEY to enable)'}`);
-  console.log(`🗄️  Database: ${SUPABASE_URL ? 'Connected' : 'Not configured'}`);
+  console.log(
+    `📧 Email service: ${process.env.RESEND_API_KEY ? "Enabled" : "Disabled (set RESEND_API_KEY to enable)"}`,
+  );
+  console.log(
+    `🗄️  Database: ${
+      process.env.VITE_SUPABASE_URL &&
+      process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+        ? "Connected"
+        : "Not configured"
+    }`,
+  );
 });

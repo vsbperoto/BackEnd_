@@ -1,4 +1,5 @@
-import { ClientGallery } from '../types';
+import { getBackendUrl } from "../lib/adminApi";
+import { ClientGallery } from "../types";
 
 export interface SendCredentialsEmailParams {
   gallery: ClientGallery;
@@ -7,64 +8,74 @@ export interface SendCredentialsEmailParams {
 
 export async function sendCredentialsEmail({
   gallery,
-  galleryUrl
+  galleryUrl,
 }: SendCredentialsEmailParams): Promise<{ success: boolean; error?: string }> {
   try {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-    const response = await fetch(`${backendUrl}/api/email/send-credentials`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${getBackendUrl()}/api/email/send-credentials`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gallery,
+          galleryUrl,
+        }),
       },
-      body: JSON.stringify({
-        gallery,
-        galleryUrl,
-      })
-    });
+    );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Email service unavailable' }));
-      throw new Error(errorData.error || 'Failed to send email');
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Email service unavailable" }));
+      throw new Error(errorData.error || "Failed to send email");
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error sending credentials email:', error);
+    console.error("Error sending credentials email:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Email service unavailable'
+      error:
+        error instanceof Error ? error.message : "Email service unavailable",
     };
   }
 }
 
 export async function sendExpirationWarningEmail(
   gallery: ClientGallery,
-  daysRemaining: number
+  daysRemaining: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
-    const response = await fetch(`${backendUrl}/api/email/send-expiration-warning`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${getBackendUrl()}/api/email/send-expiration-warning`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gallery,
+          daysRemaining,
+        }),
       },
-      body: JSON.stringify({
-        gallery,
-        daysRemaining,
-      })
-    });
+    );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Email service unavailable' }));
-      throw new Error(errorData.error || 'Failed to send expiration warning');
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Email service unavailable" }));
+      throw new Error(errorData.error || "Failed to send expiration warning");
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error sending expiration warning email:', error);
+    console.error("Error sending expiration warning email:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Email service unavailable'
+      error:
+        error instanceof Error ? error.message : "Email service unavailable",
     };
   }
 }
