@@ -1,20 +1,31 @@
-const createAppModule = require("../server/app.cjs");
-const { createApp } = createAppModule;
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Express } from "express";
+import { createRequire } from "module";
 
-let cachedApp = null;
+const require = createRequire(import.meta.url);
 
-function getApp() {
+type CreateAppModule = {
+  createApp: () => { app: Express };
+};
+
+let cachedApp: Express | null = null;
+
+function getApp(): Express {
   if (!cachedApp) {
+    const { createApp } = require("../server/app.cjs") as CreateAppModule;
     const { app } = createApp();
     cachedApp = app;
   }
+
   return cachedApp;
 }
 
-export default function handler(req, res) {
+const handler = (req: VercelRequest, res: VercelResponse): void => {
   const app = getApp();
-  app(req, res);
-}
+  app(req as any, res as any);
+};
+
+export default handler;
 
 export const config = {
   api: {
