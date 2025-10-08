@@ -1,6 +1,20 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { IncomingMessage, ServerResponse } from "http";
 import type { Express } from "express";
 import { createRequire } from "module";
+
+type VercelRequest = IncomingMessage & {
+  query?: Record<string, string | string[]>;
+  cookies?: Record<string, string>;
+  body?: unknown;
+};
+
+type VercelResponse = ServerResponse & {
+  status(code: number): VercelResponse;
+  send(body: unknown): void;
+  json(body: unknown): void;
+  redirect(url: string): void;
+  redirect(status: number, url: string): void;
+};
 
 const require = createRequire(import.meta.url);
 
