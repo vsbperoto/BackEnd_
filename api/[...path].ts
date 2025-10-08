@@ -1,43 +1,19 @@
-import type { IncomingMessage, ServerResponse } from "http";
+const createAppModule = require("../server/app.cjs");
+const { createApp } = createAppModule;
 
-import createAppModule from "../server/app.cjs";
+let cachedApp = null;
 
-interface CreateAppModule {
-  createApp: () => { app: (req: IncomingMessage, res: ServerResponse) => void };
-}
-
-const { createApp } = createAppModule as CreateAppModule;
-
-let cachedApp: ((req: IncomingMessage, res: ServerResponse) => void) | null =
-  null;
-
-function getApp(): (req: IncomingMessage, res: ServerResponse) => void {
+function getApp() {
   if (!cachedApp) {
     const { app } = createApp();
-    cachedApp = app as unknown as (
-      req: IncomingMessage,
-      res: ServerResponse,
-    ) => void;
+    cachedApp = app;
   }
   return cachedApp;
 }
 
-type ApiRequest = IncomingMessage & {
-  query?: Record<string, string | string[]>;
-  body?: unknown;
-};
-
-type ApiResponse = ServerResponse;
-
-export default function handler(req: ApiRequest, res: ApiResponse): void {
-  try {
-    const app = getApp();
-    app(req, res);
-  } catch (error) {
-    console.error("❌ Failed to handle API request", error);
-    res.statusCode = 500;
-    res.end("Internal server error");
-  }
+export default function handler(req, res) {
+  const app = getApp();
+  app(req, res);
 }
 
 export const config = {
