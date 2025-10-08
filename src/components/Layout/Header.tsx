@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
-import { Bell, Settings, LogOut, User } from 'lucide-react';
+import React, { useState } from "react";
+import { Bell, Settings, LogOut, User, Menu } from "lucide-react";
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
   onLogout?: () => void;
+  onToggleSidebar?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, subtitle, onLogout }) => {
+export const Header: React.FC<HeaderProps> = ({
+  title,
+  subtitle,
+  onLogout,
+  onToggleSidebar,
+}) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogoutClick = () => {
@@ -24,70 +30,94 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle, onLogout }) => 
   const cancelLogout = () => {
     setShowLogoutConfirm(false);
   };
+
   return (
-    <header className="bg-gradient-to-r from-boho-cream to-boho-sand border-b-2 border-boho-brown border-opacity-20 px-6 py-4 boho-pattern">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-boho-brown boho-heading">{title}</h2>
+    <header className="relative z-10 border-b border-boho-brown/10 bg-boho-cream/70 backdrop-blur-xl">
+      <div className="flex flex-col gap-6 px-6 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-8">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--ever-radius-md)] border border-boho-brown/10 bg-boho-cream/80 text-boho-brown transition-transform duration-200 hover:-translate-y-0.5 hover:border-boho-brown/30 focus:outline-none focus:ring-2 focus:ring-boho-terracotta/40 lg:hidden"
+              aria-label="Отваряне на менюто"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="ever-section-title">Evermore Admin</p>
+              <h2 className="text-3xl font-semibold text-boho-brown boho-heading lg:text-4xl">
+                {title}
+              </h2>
+            </div>
+          </div>
           {subtitle && (
-            <p className="text-boho-rust mt-1 font-boho">{subtitle}</p>
+            <p className="max-w-2xl text-sm text-boho-rust/90 font-boho lg:text-base">
+              {subtitle}
+            </p>
           )}
         </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="relative p-3 text-boho-brown hover:text-boho-rust hover:bg-boho-warm hover:bg-opacity-30 rounded-boho transition-all duration-300 hover:scale-110">
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-boho-terracotta rounded-full border border-boho-cream"></span>
-          </button>
-          
-          {/* Settings */}
-          <button className="p-3 text-boho-brown hover:text-boho-rust hover:bg-boho-warm hover:bg-opacity-30 rounded-boho transition-all duration-300 hover:scale-110">
-            <Settings className="w-5 h-5" />
-          </button>
-          
-          {/* Profile Dropdown */}
-          <div className="relative">
-            <button className="flex items-center space-x-3 p-2 hover:bg-boho-warm hover:bg-opacity-30 rounded-boho transition-all duration-300">
-              <div className="w-8 h-8 bg-gradient-to-br from-boho-sage to-boho-dusty rounded-full flex items-center justify-center border-2 border-boho-brown border-opacity-30">
-                <User className="w-4 h-4 text-boho-cream" />
-              </div>
-              <span className="text-boho-brown font-medium font-boho">Админ</span>
-            </button>
+
+        <div className="flex items-center gap-3 lg:gap-5">
+          <div className="hidden items-center gap-3 rounded-full border border-boho-brown/10 bg-boho-cream/60 px-4 py-2 text-sm text-boho-brown/80 lg:flex">
+            <span className="inline-flex h-2 w-2 rounded-full bg-boho-sage" />
+            Всичко работи гладко
           </div>
-          
-          {/* Logout */}
+
+          <button className="relative rounded-[var(--ever-radius-md)] border border-transparent p-3 text-boho-brown transition-all duration-300 hover:-translate-y-0.5 hover:border-boho-brown/10 hover:bg-boho-warm/30">
+            <Bell className="h-5 w-5" />
+            <span className="absolute -right-1 -top-1 inline-flex h-3 w-3 items-center justify-center rounded-full bg-boho-terracotta text-[10px] text-boho-cream"></span>
+          </button>
+
+          <button className="rounded-[var(--ever-radius-md)] border border-transparent p-3 text-boho-brown transition-all duration-300 hover:-translate-y-0.5 hover:border-boho-brown/10 hover:bg-boho-warm/30">
+            <Settings className="h-5 w-5" />
+          </button>
+
+          <div className="flex items-center gap-3 rounded-[var(--ever-radius-md)] border border-boho-brown/10 bg-boho-cream/70 px-3 py-2 text-left shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-boho-sage to-boho-dusty text-boho-cream">
+              <User className="h-5 w-5" />
+            </div>
+            <div className="hidden text-sm text-boho-brown/90 font-medium lg:block">
+              <p className="font-boho">Администратор</p>
+              <p className="text-xs text-boho-rust/80">Добре дошли обратно</p>
+            </div>
+          </div>
+
           <button
             onClick={handleLogoutClick}
-            className="p-3 text-boho-brown hover:text-boho-terracotta hover:bg-boho-terracotta hover:bg-opacity-20 rounded-boho transition-all duration-300 hover:scale-110"
+            className="rounded-[var(--ever-radius-md)] border border-transparent p-3 text-boho-brown transition-all duration-300 hover:-translate-y-0.5 hover:border-boho-terracotta/50 hover:bg-boho-terracotta/20"
             title="Изход"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="h-5 w-5" />
           </button>
         </div>
       </div>
 
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-boho-brown bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="boho-card rounded-boho p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-boho-brown border-opacity-20">
-            <h3 className="text-2xl font-semibold text-boho-brown mb-4 boho-heading">
-              Потвърждение за изход
-            </h3>
-            <p className="text-boho-rust mb-6 font-boho">
-              Сигурни ли сте, че искате да излезете от админ панела?
-            </p>
-            <div className="flex space-x-4">
-              <button
-                onClick={confirmLogout}
-                className="flex-1 boho-button py-3 rounded-boho text-boho-cream font-medium shadow-lg hover:shadow-xl transition-all duration-300 font-boho"
-              >
-                Да, изход
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-boho-brown/60 p-4 backdrop-blur-sm">
+          <div className="boho-card w-full max-w-md space-y-6 p-8">
+            <div className="space-y-2">
+              <span className="ever-section-title">Потвърждение</span>
+              <h3 className="text-2xl font-semibold text-boho-brown boho-heading">
+                Сигурни ли сте, че искате да излезете?
+              </h3>
+              <p className="text-sm text-boho-rust/90 font-boho">
+                Ще трябва да влезете отново, за да продължите работата си в
+                панела.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <button
                 onClick={cancelLogout}
-                className="flex-1 bg-boho-cream bg-opacity-50 text-boho-brown py-3 rounded-boho font-medium border-2 border-boho-brown border-opacity-30 hover:bg-opacity-70 transition-all duration-300 font-boho"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-[var(--ever-radius-md)] border border-boho-brown/20 bg-boho-cream/70 px-4 py-3 text-sm font-medium text-boho-brown transition-all duration-200 hover:border-boho-brown/40 hover:bg-boho-cream/90"
               >
-                Отказ
+                Остани
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="boho-button inline-flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-boho-cream"
+              >
+                Изход
               </button>
             </div>
           </div>
