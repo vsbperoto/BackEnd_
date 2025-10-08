@@ -1,5 +1,5 @@
-import { adminRequest } from '../lib/adminApi';
-import { PricingPackage } from '../types';
+import { adminRequest } from "../lib/adminApi";
+import { PricingPackage } from "../types";
 
 type PricingPackagePayload = Partial<PricingPackage> & {
   features?: Array<{ feature: string; display_order?: number }>;
@@ -13,28 +13,28 @@ type PricingPackagePayload = Partial<PricingPackage> & {
 };
 
 export async function fetchPricingPackages(): Promise<PricingPackage[]> {
-  try {
-    return await adminRequest<PricingPackage[]>('/pricing/packages');
-  } catch (error) {
-    console.error('Failed to fetch pricing packages', error);
-    return [];
-  }
+  return adminRequest<PricingPackage[]>("/pricing/packages");
 }
 
-export async function createPricingPackage(pkg: PricingPackagePayload): Promise<PricingPackage> {
-  return adminRequest<PricingPackage>('/pricing/packages', {
-    method: 'POST',
-    json: pkg
+export async function createPricingPackage(
+  pkg: PricingPackagePayload,
+): Promise<PricingPackage> {
+  return adminRequest<PricingPackage>("/pricing/packages", {
+    method: "POST",
+    json: pkg,
   });
 }
 
-export async function updatePricingPackage(id: string, updates: PricingPackagePayload): Promise<PricingPackage> {
+export async function updatePricingPackage(
+  id: string,
+  updates: PricingPackagePayload,
+): Promise<PricingPackage> {
   return adminRequest<PricingPackage>(`/pricing/packages/${id}`, {
-    method: 'PATCH',
-    json: updates
+    method: "PATCH",
+    json: updates,
   });
 }
 
 export async function deletePricingPackage(id: string): Promise<void> {
-  await adminRequest(`/pricing/packages/${id}`, { method: 'DELETE' });
+  await adminRequest(`/pricing/packages/${id}`, { method: "DELETE" });
 }
