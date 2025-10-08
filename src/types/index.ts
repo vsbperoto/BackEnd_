@@ -15,6 +15,85 @@ export interface Contact {
   phone?: string;
   message: string;
   created_at?: string;
+  archived?: boolean;
+  archived_at?: string | null;
+}
+
+export interface BlogTag {
+  id: string;
+  name: string;
+  slug: string;
+  created_at?: string;
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  content?: string | null;
+  cover_image?: string | null;
+  status: 'draft' | 'scheduled' | 'published' | 'archived';
+  published_at?: string | null;
+  scheduled_for?: string | null;
+  created_at: string;
+  updated_at: string;
+  tags: BlogTag[];
+}
+
+export interface FaqEntry {
+  id: string;
+  question: string;
+  answer: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientReview {
+  id: string;
+  reviewer_name: string;
+  event_name?: string | null;
+  rating?: number | null;
+  content: string;
+  status: 'pending' | 'approved' | 'rejected';
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PricingPackageFeature {
+  id: string;
+  package_id: string;
+  feature: string;
+  display_order: number;
+  created_at: string;
+}
+
+export interface PricingPackageTier {
+  id: string;
+  package_id: string;
+  tier_name: string;
+  price_amount?: number | null;
+  price_label?: string | null;
+  display_order: number;
+  is_featured: boolean;
+  created_at: string;
+}
+
+export interface PricingPackage {
+  id: string;
+  title: string;
+  description?: string | null;
+  highlight?: string | null;
+  is_featured: boolean;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  features: PricingPackageFeature[];
+  tiers: PricingPackageTier[];
 }
 
 export interface Partner {

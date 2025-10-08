@@ -2,7 +2,6 @@ import React from "react";
 import {
   LayoutDashboard,
   Images,
-  Users,
   Settings,
   FileText,
   BarChart3,
@@ -13,6 +12,9 @@ import {
   Handshake,
   MessageSquare,
   Mail,
+  HelpCircle,
+  BadgeDollarSign,
+  HeartHandshake,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -31,8 +33,10 @@ const menuItems = [
   { id: "inquiries", icon: MessageSquare, label: "Запитвания" },
   { id: "contacts", icon: Mail, label: "Контакти" },
   { id: "upload", icon: Upload, label: "Качване" },
-  { id: "users", icon: Users, label: "Потребители" },
-  { id: "content", icon: FileText, label: "Съдържание" },
+  { id: "content-blog", icon: FileText, label: "Блог" },
+  { id: "content-faq", icon: HelpCircle, label: "FAQ" },
+  { id: "content-reviews", icon: HeartHandshake, label: "Отзиви" },
+  { id: "content-pricing", icon: BadgeDollarSign, label: "Пакети" },
   { id: "analytics", icon: BarChart3, label: "Анализи" },
   { id: "settings", icon: Settings, label: "Настройки" },
 ];

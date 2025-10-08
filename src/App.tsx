@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabaseClient as supabase } from "./lib/supabaseClient";
 import { LoginScreen } from "./components/Auth/LoginScreen";
 import { Sidebar } from "./components/Layout/Sidebar";
@@ -12,12 +13,35 @@ import ClientGalleryManagement from "./components/Admin/ClientGalleryManagement"
 import PartnerManagement from "./components/Admin/PartnerManagement";
 import InquiryManagement from "./components/Admin/InquiryManagement";
 import ContactManagement from "./components/Admin/ContactManagement";
+import { BlogManager } from "./components/Admin/BlogManager";
+import { FaqManager } from "./components/Admin/FaqManager";
+import { ReviewManager } from "./components/Admin/ReviewManager";
+import { PricingManager } from "./components/Admin/PricingManager";
 import { SupabaseFunctionCaller } from "./components/SupabaseFunctionCaller";
 import { CloudinaryImage, Gallery } from "./types";
 import { getGalleries } from "./services/galleryService";
 import { Images, Upload, Clock, FileText, FolderOpen } from "lucide-react";
 
+const SECTION_ROUTES: Record<string, string> = {
+  dashboard: "/admin/dashboard",
+  images: "/admin/media",
+  upload: "/admin/media/upload",
+  "portfolio-galleries": "/admin/portfolio/galleries",
+  "client-galleries": "/admin/clients/galleries",
+  partners: "/admin/partners",
+  inquiries: "/admin/partners/inquiries",
+  contacts: "/admin/communications/contacts",
+  "content-blog": "/admin/content/blog",
+  "content-faq": "/admin/content/faq",
+  "content-reviews": "/admin/content/reviews",
+  "content-pricing": "/admin/content/pricing",
+  analytics: "/admin/analytics",
+  settings: "/admin/settings",
+};
+
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -37,6 +61,25 @@ function App() {
       loadGalleries();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/admin")) {
+      return;
+    }
+
+    const matched = Object.entries(SECTION_ROUTES).find(([, path]) =>
+      location.pathname.startsWith(path)
+    );
+
+    if (matched) {
+      const [section] = matched;
+      if (section !== activeSection) {
+        setActiveSection(section);
+      }
+    } else if (location.pathname === "/admin") {
+      navigate(SECTION_ROUTES.dashboard, { replace: true });
+    }
+  }, [location.pathname, activeSection, navigate]);
 
   const checkAuth = async () => {
     try {
@@ -79,7 +122,7 @@ function App() {
 
   const handleUploadComplete = (newImages: CloudinaryImage[]) => {
     setImages((prev) => [...newImages, ...prev]);
-    setActiveSection("images");
+    goToSection("images");
   };
 
   const handleImageDelete = (publicId: string) => {
@@ -111,6 +154,14 @@ function App() {
   const handleCancelGalleryForm = () => {
     setShowGalleryForm(false);
     setEditingGallery(null);
+  };
+
+  const goToSection = (section: string) => {
+    const target = SECTION_ROUTES[section] ?? SECTION_ROUTES.dashboard;
+    setActiveSection(section);
+    if (location.pathname !== target) {
+      navigate(target);
+    }
   };
 
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -351,7 +402,7 @@ function App() {
                 </p>
               </div>
               <button
-                onClick={() => setActiveSection("upload")}
+                onClick={() => goToSection("upload")}
                 className="boho-button inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-boho-cream"
               >
                 <Upload className="h-4 w-4" />
@@ -364,6 +415,18 @@ function App() {
             </div>
           </div>
         );
+
+      case "content-blog":
+        return <BlogManager />;
+
+      case "content-faq":
+        return <FaqManager />;
+
+      case "content-reviews":
+        return <ReviewManager />;
+
+      case "content-pricing":
+        return <PricingManager />;
 
       default:
         return (
@@ -428,6 +491,26 @@ function App() {
           title: "Галерия с изображения",
           subtitle: "Управлявайте и организирайте вашите изображения",
         };
+      case "content-blog":
+        return {
+          title: "Блог",
+          subtitle: "Управлявайте публикации, тагове и график",
+        };
+      case "content-faq":
+        return {
+          title: "ЧЗВ",
+          subtitle: "Създавайте и подреждайте въпроси за вашите клиенти",
+        };
+      case "content-reviews":
+        return {
+          title: "Отзиви",
+          subtitle: "Преглеждайте и одобрявайте обратната връзка от клиенти",
+        };
+      case "content-pricing":
+        return {
+          title: "Пакети",
+          subtitle: "Поддържайте актуални ценовите предложения и нива",
+        };
       default:
         return {
           title: activeSection.charAt(0).toUpperCase() + activeSection.slice(1),
@@ -466,7 +549,7 @@ function App() {
           <Sidebar
             activeSection={activeSection}
             onSectionChange={(section) => {
-              setActiveSection(section);
+              goToSection(section);
               closeSidebar();
             }}
             userEmail={user?.email}
@@ -483,7 +566,7 @@ function App() {
               <Sidebar
                 activeSection={activeSection}
                 onSectionChange={(section) => {
-                  setActiveSection(section);
+                  goToSection(section);
                   closeSidebar();
                 }}
                 userEmail={user?.email}
