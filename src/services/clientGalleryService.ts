@@ -1,9 +1,20 @@
 // src/services/clientGalleryService.ts
-import { supabaseClient } from "../lib/supabaseClient"; // Use regular client, not admin
+import { getSupabaseEnvValue, supabaseClient } from "../lib/supabaseClient"; // Use regular client, not admin
 import { ClientGallery, ClientGalleryStats } from "../types";
 
 // Get the Edge Function URL
-const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/client-galleries`;
+const supabaseUrl = getSupabaseEnvValue("SUPABASE_URL");
+const supabaseAnonKey = getSupabaseEnvValue("SUPABASE_ANON_KEY");
+
+if (!supabaseUrl) {
+  throw new Error("Missing SUPABASE_URL environment variable");
+}
+
+if (!supabaseAnonKey) {
+  throw new Error("Missing SUPABASE_ANON_KEY environment variable");
+}
+
+const EDGE_FUNCTION_URL = `${supabaseUrl}/functions/v1/client-galleries`;
 
 // Helper to make authenticated requests to Edge Function
 async function callEdgeFunction<T>(
@@ -20,7 +31,7 @@ async function callEdgeFunction<T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      Authorization: `Bearer ${session?.access_token || supabaseAnonKey}`,
       ...(options.headers ?? {}),
     },
   });
