@@ -23,27 +23,6 @@ export interface CreateAppResult {
   app: Express;
 }
 
-dotenv.config();
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-  console.error(
-    "❌ Missing VITE_SUPABASE_URL or VITE_SUPABASE_SERVICE_ROLE_KEY in environment",
-  );
-  throw new Error("Missing Supabase environment configuration");
-}
-
-if (!ADMIN_TOKEN) {
-  console.warn("⚠️  Warning: ADMIN_TOKEN not set. Using default token.");
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-
 function mapSupabaseError(res: Response, error: NullableError) {
   return res.status(500).json({
     error: error?.message || "Unexpected Supabase error",
@@ -53,90 +32,111 @@ function mapSupabaseError(res: Response, error: NullableError) {
   });
 }
 
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  const token = req.header("x-admin-token");
-  if (!ADMIN_TOKEN) {
-    return res
-      .status(403)
-      .json({ error: "ADMIN_TOKEN not configured on server" });
-  }
-  if (!token || token !== ADMIN_TOKEN) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  return next();
-}
-
-async function fetchBlogPostWithTags(id: string) {
-  const { data: post, error } = await supabase
-    .from("blog_posts")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error || !post) {
-    return { post: null as SupabaseRow | null, error };
-  }
-
-  const { data: tagLinks, error: tagError } = await supabase
-    .from("blog_post_tags")
-    .select("post_id, blog_tags ( id, name, slug )")
-    .eq("post_id", id);
-
-  if (tagError) {
-    return { post: null as SupabaseRow | null, error: tagError };
-  }
-
-  const tags = (tagLinks || []).map((link) => link.blog_tags).filter(Boolean);
-
-  return { post: { ...post, tags }, error: null };
-}
-
-async function fetchPricingPackageWithRelations(id: string) {
-  const { data: pkg, error } = await supabase
-    .from("pricing_packages")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error || !pkg) {
-    return { pkg: null as SupabaseRow | null, error };
-  }
-
-  const [
-    { data: featureData, error: featureError },
-    { data: tierData, error: tierError },
-  ] = await Promise.all([
-    supabase
-      .from("pricing_package_features")
-      .select("*")
-      .eq("package_id", id)
-      .order("display_order", { ascending: true }),
-    supabase
-      .from("pricing_package_tiers")
-      .select("*")
-      .eq("package_id", id)
-      .order("display_order", { ascending: true }),
-  ]);
-
-  if (featureError) {
-    return { pkg: null as SupabaseRow | null, error: featureError };
-  }
-
-  if (tierError) {
-    return { pkg: null as SupabaseRow | null, error: tierError };
-  }
-
-  return {
-    pkg: {
-      ...pkg,
-      features: featureData || [],
-      tiers: tierData || [],
-    },
-    error: null,
-  };
-}
-
 export function createApp(): CreateAppResult {
+  dotenv.config();
+
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+  const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.error(
+      "❌ Missing VITE_SUPABASE_URL or VITE_SUPABASE_SERVICE_ROLE_KEY in environment",
+    );
+    throw new Error("Missing Supabase environment configuration");
+  }
+
+  if (!ADMIN_TOKEN) {
+    console.warn("⚠️  Warning: ADMIN_TOKEN not set. Using default token.");
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  function requireAdmin(req: Request, res: Response, next: NextFunction) {
+    const token = req.header("x-admin-token");
+    if (!ADMIN_TOKEN) {
+      return res
+        .status(403)
+        .json({ error: "ADMIN_TOKEN not configured on server" });
+    }
+    if (!token || token !== ADMIN_TOKEN) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    return next();
+  }
+
+  async function fetchBlogPostWithTags(id: string) {
+    const { data: post, error } = await supabase
+      .from("blog_posts")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !post) {
+      return { post: null as SupabaseRow | null, error };
+    }
+
+    const { data: tagLinks, error: tagError } = await supabase
+      .from("blog_post_tags")
+      .select("post_id, blog_tags ( id, name, slug )")
+      .eq("post_id", id);
+
+    if (tagError) {
+      return { post: null as SupabaseRow | null, error: tagError };
+    }
+
+    const tags = (tagLinks || []).map((link) => link.blog_tags).filter(Boolean);
+
+    return { post: { ...post, tags }, error: null };
+  }
+
+  async function fetchPricingPackageWithRelations(id: string) {
+    const { data: pkg, error } = await supabase
+      .from("pricing_packages")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !pkg) {
+      return { pkg: null as SupabaseRow | null, error };
+    }
+
+    const [
+      { data: featureData, error: featureError },
+      { data: tierData, error: tierError },
+    ] = await Promise.all([
+      supabase
+        .from("pricing_package_features")
+        .select("*")
+        .eq("package_id", id)
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("pricing_package_tiers")
+        .select("*")
+        .eq("package_id", id)
+        .order("display_order", { ascending: true }),
+    ]);
+
+    if (featureError) {
+      return { pkg: null as SupabaseRow | null, error: featureError };
+    }
+
+    if (tierError) {
+      return { pkg: null as SupabaseRow | null, error: tierError };
+    }
+
+    return {
+      pkg: {
+        ...pkg,
+        features: featureData || [],
+        tiers: tierData || [],
+      },
+      error: null,
+    };
+  }
+
   const app = express();
   const adminRouter = express.Router();
 
