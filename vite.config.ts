@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       exclude: ["lucide-react"],
     },
+    envPrefix: [legacyPrefix, "SUPABASE_"],
     server: {
       port: 5173,
     },
