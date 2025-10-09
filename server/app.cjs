@@ -8,13 +8,17 @@ const emailRoutes = require("./routes/email.cjs");
 function createApp() {
   require("dotenv").config();
 
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  const SUPABASE_URL =
+    process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? null;
+  const SUPABASE_SERVICE_KEY =
+    process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    null;
   const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     console.error(
-      "❌ Missing VITE_SUPABASE_URL or VITE_SUPABASE_SERVICE_ROLE_KEY in environment",
+      "❌ Missing Supabase credentials. Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or their VITE_ variants) are configured.",
     );
     throw new Error("Missing Supabase environment configuration");
   }
