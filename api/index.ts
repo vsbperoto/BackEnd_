@@ -1,35 +1,21 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import type { Express } from "express";
-import { createRequire } from "module";
+import { createApp } from "../server/app.cjs";
 
-const require = createRequire(import.meta.url);
+let cachedApp: ReturnType<typeof createApp> | null = null;
 
-type CreateAppModule = {
-  createApp: () => { app: Express };
-};
-
-let cachedApp: Express | null = null;
-
-function getApp(): Express {
-  if (!cachedApp) {
-    const { createApp } = require("../server/app.cjs") as CreateAppModule;
-    const { app } = createApp();
-    cachedApp = app;
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    if (!cachedApp) {
+      cachedApp = createApp();
+    }
+    const app = cachedApp as unknown as (
+      req: VercelRequest,
+      res: VercelResponse,
+    ) => void;
+    return app(req, res);
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error("Unknown error");
+    console.error("API handler error:", error);
+    return res.status(500).json({ error: error.message || "Server error" });
   }
-
-  return cachedApp;
 }
-
-const handler = (req: VercelRequest, res: VercelResponse): void => {
-  const app = getApp();
-  app(req as any, res as any);
-};
-
-export default handler;
-
-export const config = {
-  api: {
-    bodyParser: false,
-    externalResolver: true,
-  },
-};
