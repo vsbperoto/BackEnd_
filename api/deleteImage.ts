@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 interface ApiRequest {
   method?: string;
@@ -13,31 +13,74 @@ interface ApiResponse {
   setHeader: (name: string, value: string) => void;
 }
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY =
-  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ??
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SUPABASE_ANON_KEY =
-  process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
-const CLOUDINARY_CLOUD_NAME =
-  process.env.VITE_CLOUDINARY_CLOUD_NAME ?? process.env.CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_API_KEY =
-  process.env.CLOUDINARY_API_KEY ?? process.env.VITE_CLOUDINARY_API_KEY;
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
+type GenericSupabaseClient = SupabaseClient<Record<string, unknown>>;
 
-const supabaseAdmin =
-  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : null;
+type SupabaseResolution =
+  | { missing: string[] }
+  | { admin: GenericSupabaseClient; auth: GenericSupabaseClient };
 
-const supabaseAuth =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : null;
+type CloudinaryResolution =
+  | { missing: string[] }
+  | { name: string; key: string; secret: string };
+
+function readEnv(key: string): string | undefined {
+  const value = process.env[key];
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+const supabaseOptions = {
+  auth: { autoRefreshToken: false, persistSession: false },
+} as const;
+
+let cachedSupabaseAdmin: GenericSupabaseClient | null = null;
+let cachedSupabaseAuth: GenericSupabaseClient | null = null;
+
+function resolveSupabaseClients(): SupabaseResolution {
+  const url = readEnv("SUPABASE_URL");
+  const serviceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey = readEnv("SUPABASE_ANON_KEY");
+  const missing: string[] = [];
+
+  if (!url) missing.push("SUPABASE_URL");
+  if (!serviceRoleKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (!anonKey) missing.push("SUPABASE_ANON_KEY");
+
+  if (missing.length) {
+    return { missing } as const;
+  }
+
+  if (!cachedSupabaseAdmin) {
+    cachedSupabaseAdmin = createClient(url, serviceRoleKey, supabaseOptions);
+  }
+
+  if (!cachedSupabaseAuth) {
+    cachedSupabaseAuth = createClient(url, anonKey, supabaseOptions);
+  }
+
+  return {
+    admin: cachedSupabaseAdmin!,
+    auth: cachedSupabaseAuth!,
+  };
+}
+
+function resolveCloudinaryConfig(): CloudinaryResolution {
+  const name = readEnv("CLOUDINARY_CLOUD_NAME");
+  const key = readEnv("CLOUDINARY_API_KEY");
+  const secret = readEnv("CLOUDINARY_API_SECRET");
+  const missing: string[] = [];
+
+  if (!name) missing.push("CLOUDINARY_CLOUD_NAME");
+  if (!key) missing.push("CLOUDINARY_API_KEY");
+  if (!secret) missing.push("CLOUDINARY_API_SECRET");
+
+  if (missing.length) {
+    return { missing } as const;
+  }
+
+  return { name, key, secret } as const;
+}
 
 function parseRequestBody(body: ApiRequest["body"]): Record<string, unknown> {
   if (!body) return {};
@@ -61,16 +104,27 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (
-    !supabaseAdmin ||
-    !supabaseAuth ||
-    !CLOUDINARY_CLOUD_NAME ||
-    !CLOUDINARY_API_KEY ||
-    !CLOUDINARY_API_SECRET
-  ) {
-    console.error("Missing environment configuration for deleteImage");
-    return res.status(500).json({ error: "Server configuration error" });
+  const supabaseResult = resolveSupabaseClients();
+  const cloudinaryResult = resolveCloudinaryConfig();
+
+  if ("missing" in supabaseResult || "missing" in cloudinaryResult) {
+    const missing = [
+      ...("missing" in supabaseResult ? supabaseResult.missing : []),
+      ...("missing" in cloudinaryResult ? cloudinaryResult.missing : []),
+    ];
+    console.error("Missing environment configuration for deleteImage", missing);
+    return res.status(500).json({
+      error: "Server configuration error",
+      missing,
+    });
   }
+
+  const { admin: supabaseAdmin, auth: supabaseAuth } = supabaseResult;
+  const {
+    name: cloudName,
+    key: cloudKey,
+    secret: cloudSecret,
+  } = cloudinaryResult;
 
   const authHeader = req.headers["authorization"];
   if (
@@ -103,19 +157,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const timestamp = Math.round(Date.now() / 1000);
     const signature = crypto
       .createHash("sha1")
-      .update(
-        `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_API_SECRET}`,
-      )
+      .update(`public_id=${publicId}&timestamp=${timestamp}${cloudSecret}`)
       .digest("hex");
 
     const params = new URLSearchParams();
     params.append("public_id", publicId);
     params.append("timestamp", timestamp.toString());
     params.append("signature", signature);
-    params.append("api_key", CLOUDINARY_API_KEY);
+    params.append("api_key", cloudKey);
 
     const cloudinaryResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/destroy`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
       {
         method: "POST",
         body: params,

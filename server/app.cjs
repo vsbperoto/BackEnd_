@@ -6,26 +6,46 @@ const { createClient } = require("@supabase/supabase-js");
 const emailRoutes = require("./routes/email.cjs");
 
 function createApp() {
-  require("dotenv").config();
-
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
   const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
-
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    console.error(
-      "❌ Missing VITE_SUPABASE_URL or VITE_SUPABASE_SERVICE_ROLE_KEY in environment",
-    );
-    throw new Error("Missing Supabase environment configuration");
-  }
 
   if (!ADMIN_TOKEN) {
     console.warn("⚠️  Warning: ADMIN_TOKEN not set. Using default token.");
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  let supabaseClient = null;
+
+  function ensureSupabaseClient() {
+    const url = process.env.SUPABASE_URL?.trim();
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+    const missing = [];
+
+    if (!url) missing.push("SUPABASE_URL");
+    if (!serviceKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (missing.length > 0) {
+      return { missing };
+    }
+
+    if (!supabaseClient) {
+      supabaseClient = createClient(url, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+    }
+
+    return { client: supabaseClient };
+  }
+
+  function getSupabaseOrRespond(res) {
+    const result = ensureSupabaseClient();
+    if (result.missing) {
+      res.status(500).json({
+        error: "Missing environment variables",
+        missing: result.missing,
+      });
+      return null;
+    }
+    return result.client;
+  }
 
   const app = express();
   const adminRouter = express.Router();
@@ -82,7 +102,7 @@ function createApp() {
     });
   }
 
-  async function fetchBlogPostWithTags(id) {
+  async function fetchBlogPostWithTags(supabase, id) {
     const { data: post, error } = await supabase
       .from("blog_posts")
       .select("*")
@@ -107,7 +127,7 @@ function createApp() {
     return { post: { ...post, tags }, error: null };
   }
 
-  async function fetchPricingPackageWithRelations(id) {
+  async function fetchPricingPackageWithRelations(supabase, id) {
     const { data: pkg, error } = await supabase
       .from("pricing_packages")
       .select("*")
@@ -153,6 +173,9 @@ function createApp() {
   }
 
   app.get("/api/galleries", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("galleries")
@@ -166,6 +189,9 @@ function createApp() {
   });
 
   adminRouter.get("/galleries", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("galleries")
@@ -181,6 +207,9 @@ function createApp() {
   });
 
   adminRouter.post("/galleries", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const payload = req.body;
       const { data, error } = await supabase
@@ -196,6 +225,9 @@ function createApp() {
   });
 
   adminRouter.patch("/galleries/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -213,6 +245,9 @@ function createApp() {
   });
 
   adminRouter.delete("/galleries/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase.from("galleries").delete().eq("id", id);
@@ -224,6 +259,9 @@ function createApp() {
   });
 
   adminRouter.get("/contacts", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const archivedFilter = req.query.archived;
       const { data, error } = await supabase
@@ -259,6 +297,9 @@ function createApp() {
   });
 
   adminRouter.post("/contacts/:id/archive", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -275,6 +316,9 @@ function createApp() {
   });
 
   adminRouter.delete("/contacts/:id/archive", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -289,6 +333,9 @@ function createApp() {
   });
 
   adminRouter.delete("/contacts/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase.from("contacts").delete().eq("id", id);
@@ -300,6 +347,9 @@ function createApp() {
   });
 
   adminRouter.post("/client_galleries", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("client_galleries")
@@ -314,6 +364,9 @@ function createApp() {
   });
 
   adminRouter.patch("/client_galleries/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { data, error } = await supabase
@@ -330,6 +383,9 @@ function createApp() {
   });
 
   adminRouter.delete("/client_galleries/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -344,6 +400,9 @@ function createApp() {
   });
 
   adminRouter.post("/client_images", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("client_images")
@@ -357,6 +416,9 @@ function createApp() {
   });
 
   adminRouter.post("/client_images/reorder", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { order } = req.body;
       if (!Array.isArray(order))
@@ -380,6 +442,9 @@ function createApp() {
   });
 
   adminRouter.patch("/client_images/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { data, error } = await supabase
@@ -396,6 +461,9 @@ function createApp() {
   });
 
   adminRouter.delete("/client_images/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -410,6 +478,9 @@ function createApp() {
   });
 
   adminRouter.get("/blog/posts", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data: posts, error } = await supabase
         .from("blog_posts")
@@ -443,6 +514,9 @@ function createApp() {
   });
 
   adminRouter.post("/blog/posts", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { tags = [], ...payload } = req.body || {};
       const now = new Date().toISOString();
@@ -476,6 +550,7 @@ function createApp() {
       }
 
       const { post, error: fetchError } = await fetchBlogPostWithTags(
+        supabase,
         created.id,
       );
       if (fetchError) return mapSupabaseError(res, fetchError);
@@ -486,6 +561,9 @@ function createApp() {
   });
 
   adminRouter.patch("/blog/posts/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { tags, ...updates } = req.body || {};
@@ -521,7 +599,10 @@ function createApp() {
         }
       }
 
-      const { post, error: fetchError } = await fetchBlogPostWithTags(id);
+      const { post, error: fetchError } = await fetchBlogPostWithTags(
+        supabase,
+        id,
+      );
       if (fetchError) return mapSupabaseError(res, fetchError);
       res.json(post);
     } catch (err) {
@@ -530,6 +611,9 @@ function createApp() {
   });
 
   adminRouter.delete("/blog/posts/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase.from("blog_posts").delete().eq("id", id);
@@ -541,6 +625,9 @@ function createApp() {
   });
 
   adminRouter.get("/blog/tags", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("blog_tags")
@@ -554,6 +641,9 @@ function createApp() {
   });
 
   adminRouter.post("/blog/tags", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("blog_tags")
@@ -568,6 +658,9 @@ function createApp() {
   });
 
   adminRouter.patch("/blog/tags/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { data, error } = await supabase
@@ -584,6 +677,9 @@ function createApp() {
   });
 
   adminRouter.delete("/blog/tags/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase.from("blog_tags").delete().eq("id", id);
@@ -595,6 +691,9 @@ function createApp() {
   });
 
   adminRouter.get("/faqs", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("faq_entries")
@@ -608,6 +707,9 @@ function createApp() {
   });
 
   adminRouter.post("/faqs", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("faq_entries")
@@ -622,6 +724,9 @@ function createApp() {
   });
 
   adminRouter.patch("/faqs/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { data, error } = await supabase
@@ -638,6 +743,9 @@ function createApp() {
   });
 
   adminRouter.delete("/faqs/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -652,6 +760,9 @@ function createApp() {
   });
 
   adminRouter.get("/reviews", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("client_reviews")
@@ -665,6 +776,9 @@ function createApp() {
   });
 
   adminRouter.post("/reviews", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("client_reviews")
@@ -679,6 +793,9 @@ function createApp() {
   });
 
   adminRouter.patch("/reviews/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { data, error } = await supabase
@@ -695,6 +812,9 @@ function createApp() {
   });
 
   adminRouter.delete("/reviews/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -709,6 +829,9 @@ function createApp() {
   });
 
   adminRouter.get("/pricing/packages", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data: packages, error } = await supabase
         .from("pricing_packages")
@@ -762,6 +885,9 @@ function createApp() {
   });
 
   adminRouter.post("/pricing/packages", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { features = [], tiers = [], ...payload } = req.body || {};
       const now = new Date().toISOString();
@@ -800,6 +926,7 @@ function createApp() {
       }
 
       const { pkg, error: fetchError } = await fetchPricingPackageWithRelations(
+        supabase,
         created.id,
       );
       if (fetchError) return mapSupabaseError(res, fetchError);
@@ -810,6 +937,9 @@ function createApp() {
   });
 
   adminRouter.patch("/pricing/packages/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { features, tiers, ...updates } = req.body || {};
@@ -864,8 +994,10 @@ function createApp() {
         }
       }
 
-      const { pkg, error: fetchError } =
-        await fetchPricingPackageWithRelations(id);
+      const { pkg, error: fetchError } = await fetchPricingPackageWithRelations(
+        supabase,
+        id,
+      );
       if (fetchError) return mapSupabaseError(res, fetchError);
       res.json(pkg);
     } catch (err) {
@@ -874,6 +1006,9 @@ function createApp() {
   });
 
   adminRouter.delete("/pricing/packages/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -888,6 +1023,9 @@ function createApp() {
   });
 
   adminRouter.get("/partners", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("partners")
@@ -901,6 +1039,9 @@ function createApp() {
   });
 
   adminRouter.post("/partners", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("partners")
@@ -915,6 +1056,9 @@ function createApp() {
   });
 
   adminRouter.patch("/partners/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { data, error } = await supabase
@@ -931,6 +1075,9 @@ function createApp() {
   });
 
   adminRouter.delete("/partners/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase.from("partners").delete().eq("id", id);
@@ -942,6 +1089,9 @@ function createApp() {
   });
 
   adminRouter.get("/inquiries", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { data, error } = await supabase
         .from("partnership_inquiries")
@@ -955,6 +1105,9 @@ function createApp() {
   });
 
   adminRouter.patch("/inquiries/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { status, notes } = req.body || {};
@@ -972,6 +1125,9 @@ function createApp() {
   });
 
   adminRouter.delete("/inquiries/:id", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       const { error } = await supabase
@@ -988,6 +1144,9 @@ function createApp() {
   app.use("/api/admin", adminRouter);
 
   app.post("/api/partners/inquiries", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const payload = req.body || {};
       const { data, error } = await supabase
@@ -1003,6 +1162,9 @@ function createApp() {
   });
 
   app.post("/api/client/favorites", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { gallery_id, client_email, image_public_id } = req.body || {};
       if (!gallery_id || !client_email || !image_public_id)
@@ -1027,6 +1189,9 @@ function createApp() {
   });
 
   app.post("/api/client/favorites/delete", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { gallery_id, client_email, image_public_id } = req.body || {};
       if (!gallery_id || !client_email || !image_public_id)
@@ -1043,6 +1208,9 @@ function createApp() {
   });
 
   app.post("/api/client/downloads", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const payload = req.body || {};
       if (!payload.gallery_id || !payload.client_email)
@@ -1060,6 +1228,9 @@ function createApp() {
   });
 
   app.post("/api/client/galleries/:id/increment_view", async (req, res) => {
+    const supabase = getSupabaseOrRespond(res);
+    if (!supabase) return;
+
     try {
       const { id } = req.params;
       if (!id) return res.status(400).json({ error: "Missing id" });
@@ -1084,16 +1255,18 @@ function createApp() {
     }
   });
 
-  app.get("/health", (req, res) => {
+  app.get("/health", (_req, res) => {
+    const supabaseStatus = ensureSupabaseClient();
     res.json({
       status: "ok",
       timestamp: new Date().toISOString(),
-      supabase: !!(SUPABASE_URL && SUPABASE_SERVICE_KEY),
-      email: !!process.env.RESEND_API_KEY,
+      supabase: !supabaseStatus.missing,
+      missing: supabaseStatus.missing ?? [],
+      email: Boolean(process.env.RESEND_API_KEY),
     });
   });
 
-  return { app };
+  return app;
 }
 
 module.exports = { createApp };
