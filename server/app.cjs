@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { createClient } = require("@supabase/supabase-js");
-const analyticsRouter = require("./routes/analytics.ts").default;
+// const analyticsRouter = require("./routes/analytics.ts").default;
 const emailRoutes = require("./routes/email.cjs");
 
 function createApp() {
@@ -58,7 +58,7 @@ function createApp() {
 
   app.use("/api/email", emailRoutes);
 
-  app.use("/api/client/analytics", analyticsRouter);
+  // app.use("/api/client/analytics", analyticsRouter);
 
   function requireAdmin(req, res, next) {
     const token = req.header("x-admin-token");
