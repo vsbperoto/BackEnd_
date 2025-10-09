@@ -3,6 +3,7 @@
 ## Overview
 
 This is the admin backend for the EverMore Photography website. It includes:
+
 - Admin dashboard for managing galleries, client galleries, partners, and contacts
 - Image upload and management with Cloudinary
 - Client gallery management with access codes and expiration dates
@@ -23,9 +24,9 @@ All environment variables are configured in the `.env` file:
 
 ```env
 # Supabase Configuration (✅ Configured)
-VITE_SUPABASE_URL=https://0ec90b57d6e95fcbda19832f.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-anon-key>
-VITE_SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+SUPABASE_URL=https://0ec90b57d6e95fcbda19832f.supabase.co
+SUPABASE_ANON_KEY=<your-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 
 # Cloudinary Configuration (✅ Configured)
 VITE_CLOUDINARY_CLOUD_NAME=djrsrxkls
@@ -45,6 +46,7 @@ RESEND_API_KEY=
 The database schema is already applied to your Bolt Supabase instance. All tables are ready:
 
 ✅ **Client Gallery Tables:**
+
 - `client_galleries` - Wedding galleries for clients
 - `client_images` - Individual images within galleries
 - `client_gallery_analytics` - View tracking
@@ -52,6 +54,7 @@ The database schema is already applied to your Bolt Supabase instance. All table
 - `client_gallery_favorites` - Favorite image selections
 
 ✅ **Admin Portfolio Tables:**
+
 - `galleries` - Public portfolio galleries
 - `partners` - Partnership directory
 - `partnership_inquiries` - Partnership requests
@@ -60,16 +63,19 @@ The database schema is already applied to your Bolt Supabase instance. All table
 ## Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Verify environment variables:
+
 ```bash
 cat .env
 ```
 
 3. Build the project to verify everything works:
+
 ```bash
 npm run build
 ```
@@ -81,15 +87,19 @@ npm run build
 You need to run TWO servers:
 
 **Terminal 1 - Frontend Dev Server:**
+
 ```bash
 npm run dev
 ```
+
 This starts the Vite development server at `http://localhost:5173`
 
 **Terminal 2 - Backend API Server:**
+
 ```bash
 npm run server
 ```
+
 This starts the Express backend server at `http://localhost:4000`
 
 ### What Each Server Does
@@ -120,6 +130,7 @@ The admin panel uses Supabase Auth with email/password authentication.
 6. Use these credentials to log into the admin panel
 
 Alternatively, use SQL:
+
 ```sql
 -- This creates a user in Supabase Auth
 -- Then log in with the email/password you set
@@ -175,19 +186,23 @@ Alternatively, use SQL:
 ### Backend Server (http://localhost:4000)
 
 **Health Check:**
+
 - `GET /health` - Server status and configuration
 
 **Email:**
+
 - `POST /api/email/send-credentials` - Send gallery credentials to client
 - `POST /api/email/send-expiration-warning` - Send gallery expiration warning
 
 **Galleries:**
+
 - `GET /api/galleries` - Get all galleries
 - `POST /api/admin/galleries` - Create gallery (requires admin token)
 - `PATCH /api/admin/galleries/:id` - Update gallery (requires admin token)
 - `DELETE /api/admin/galleries/:id` - Delete gallery (requires admin token)
 
 **Client Galleries:**
+
 - `POST /api/admin/client_galleries` - Create client gallery (requires admin token)
 - `PATCH /api/admin/client_galleries/:id` - Update client gallery (requires admin token)
 - `DELETE /api/admin/client_galleries/:id` - Delete client gallery (requires admin token)
@@ -219,6 +234,7 @@ Alternatively, use SQL:
 1. Verify Supabase credentials in `.env`
 2. Check Supabase dashboard for service status
 3. Test database connection:
+
 ```bash
 curl http://localhost:4000/api/galleries
 ```
@@ -242,6 +258,7 @@ curl http://localhost:4000/api/galleries
 ## Production Deployment
 
 1. Build the frontend:
+
 ```bash
 npm run build
 ```
@@ -258,6 +275,7 @@ npm run build
 ## Support
 
 For issues or questions:
+
 1. Check this README
 2. Review browser console for errors
 3. Check backend server logs
